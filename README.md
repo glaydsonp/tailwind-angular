@@ -1,27 +1,62 @@
-# TailwindAngular
+# Angular app integrated with TailwindCSS
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.3.6.
+# From start
 
-## Development server
+Install tailwind
+1 - npm i tailwindcss
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Install new webpack and postcss as dev-dependecies
+2 - npm i -D @angular-builders/custom-webpack @fullhuman/postcss-purgecss
 
-## Code scaffolding
+Init TailwindCSS
+3 - npx tailwind init
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+4 - Create a new scss file: src/tailwind.scss
+5 - Add this to the scss file:
 
-## Build
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+6 - At the root of the project, create the file "extra-webpack.config.js"
+7 - Add this to it:
 
-## Running unit tests
+const purgecss = require('@fullhuman/postcss-purgecss')({
+  // Specify the paths to all of the template files in your project
+  content: ['./src/**/*.html', './src/**/*.component.ts'],
+  // Include any special characters you're using in this regular expression
+  defaultExtractor: content => content.match(/[\w-/:]+(?<!:)/g) || []
+});
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+module.exports = (config, options) => {
+  console.log(`Using '${config.mode}' mode`);
+  config.module.rules.push({
+    test: /tailwind\.scss$/,
+    use: [
+      {
+        loader: 'postcss-loader',
+        options: {
+          plugins: [
+            require('tailwindcss')('./tailwind.config.js'),
+            require('autoprefixer'),
+            ...(config.mode === 'production' ? [purgecss] : [])
+          ]
+        }
+      }
+    ]
+  });
+  return config;
+};
 
-## Running end-to-end tests
+8 - Config angular.json
+8.1 - Stage changes to build
+8.1.1 - ng config projects.<my-project>.architect.build.builder @angular-builders/custom-webpack:browser
+8.1.2 - ng config projects<my-project>.architect.build.options.customWebpackConfig.path extra-webpack.config.js
+8.2 - Stage changes to serve
+8.2.1 - ng config projects.<my-project>.architect.serve.builder @angular-builders/custom-webpack:dev-server
+8.2.2 - ng config projects<my-project>.architect.serve.options.customWebpackConfig.path extra-webpack.config.js
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+9 - Add tailwind.scss to file styles array
+9.1 - ng config projects.<my-project>.architect.build.options.styles[1] src/tailwind.scss
 
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+DONE! 
